@@ -1,0 +1,43 @@
+#
+# This is a Shiny web application. You can run the application by clicking
+# the 'Run App' button above.
+#
+library(shiny)
+library(leaflet)
+library(sf)
+library(tmap)
+
+censo <- st_read("Datos/argcenso.shp")
+
+varlist <- setdiff(names(censo), "geometry")
+
+runApp(list(
+  ui = fluidPage(
+    titlePanel("Shiny tmap!"),
+    sidebarLayout(
+      sidebarPanel(
+        selectInput("var", label = "Variable", choices = varlist, selected = "Fem")  
+      ),
+      mainPanel(
+        leafletOutput("map")
+      )
+    )
+  ),
+  server = function(input, output) {
+    output$map = renderLeaflet({
+      if (packageVersion("tmap") >= 2.0) {
+        tm <- tm_basemap(leaflet::providers$Stamen.TerrainBackground) +
+          tm_shape(censo) +
+          tm_polygons(input$var) +
+          tm_tiles(leaflet::providers$Stamen.TonerLabels, group = "Labels")  
+      } else {
+        tm <- tm_shape(censo) +
+          tm_polygons(input$var) + 
+          tm_view(basemaps = "Stamen.TerrainBackground")
+      }
+      
+      tmap_leaflet(tm)
+    })
+  }
+))
+
